@@ -1,17 +1,26 @@
 from flask_restx import Namespace, Resource
 from controllers.spotify_controller import SpotifyAPI
+from controllers.reddit_controller import RedditAPI
 from flask import request
-
+from utils.playlist_machine import PlaylistMachine
 
 api_namespace = Namespace("Routes", description="Playlist Machine Routes")
 spotify_api = SpotifyAPI()
+reddit_api = RedditAPI()
 
-@api_namespace.route("/internal/refresh-token")
-class RefreshToken(Resource):
-  def post(self):
-    return spotify_api.refresh_access_token()
-  
-@api_namespace.route("/get-artists")
+playlist_machine = PlaylistMachine()
+
+@api_namespace.route("/edm")
+class ScrapeEDM(Resource):
+    def get(self):
+        playlist_machine.MikeDean()
+ 
+@api_namespace.route("/internal/refresh-token") 
+class RefreshToken(Resource): 
+  def post(self): 
+    return spotify_api.refresh_access_token() 
+   
+@api_namespace.route("/get-artists") 
 @api_namespace.param('query', 'The search query for the artist', _in='query')
 class GetArtists(Resource):
     def get(self):
