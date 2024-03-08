@@ -1,6 +1,7 @@
 from controllers.spotify_controller import SpotifyAPI
 from controllers.reddit_controller import RedditAPI
 from controllers.openai_controller import OpenAiAPI
+from utils.helpers import cleanse_string
 import json
 
 class PlaylistMachine:
@@ -12,18 +13,24 @@ class PlaylistMachine:
   def MikeDean(self):   
     # 1. query reddit for edm announcements 
     posts = self.GetMusicPosts()
+    if(len(posts) < 1): return
+    
     json_str = json.dumps(posts, indent=4)
     print(json_str)
+    
     # 2. generate prompt
+    prompt = self.CreatePlaylistPrompt(posts)
+    print(prompt)
     
     # 3. ask chat GPT for SEO playlist names for each relevant title/description
-    self.GetPlaylistNames()
-    pass
+    playlist_names = self.QueryForPlaylistNames(prompt)
+    print(playlist_names)
+    
     
 
   def GetMusicPosts(self):
     subreddit = 'edm'
-    flairs = ['upcoming', 'music']
+    flairs = ['upcoming'] # can add 'music' flair if we're feeling crazy
     posts = self.reddit_api.fetch_posts(subreddit)
     announcements = []
     for post in posts:
@@ -41,5 +48,15 @@ class PlaylistMachine:
         })
     return announcements
   
-  def GetPlaylistNames(self):
-    response = self.openai_api.query_chat("Hows it going")
+
+  def CreatePlaylistPrompt(self, posts):
+    prompt = f"Here are {len(posts)} Reddit post titles. For each of the posts that could be translated into a playlist, return with an SEO optimized playlist name. Here are the post titles: "
+    titles = [post["title"] for post in posts]
+    prompt += "\n-"
+    prompt += "\n- ".join(titles)
+    return prompt
+
+  def QueryForPlaylistNames(self, prompt):
+    response = self.openai_api.query_chat(prompt)
+    playlist_names = cleanse_string(response)
+    return playlist_names

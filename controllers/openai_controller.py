@@ -11,15 +11,17 @@ class OpenAiAPI:
     self.gpt = OpenAI(api_key=self.key)
 
   def query_chat(self, prompt):
-    print("querying")
     response = self.gpt.chat.completions.create(
             model=self.model,
             messages=[
+              {
+                "role":"system",
+                "content": "You are a resource for generating SEO optimized Spotify playlists titles, I will give you a list of Reddit post titles declaring upcoming things like concerts and song/album releases and you will respond with a SEO playlist name related to the title. For example, if there is a post announcing a new childish gambino album called 2005, you would make a playlist name called \“2005 by Childish Gambino\”, dont add too much, only what someone might search. If the post title is not related to upcoming concerts or a song/album announcement, just skip that one and don’t respond with anything. If it mentions an album or song in the title, assume it is an announcement and generate a playlist name for it. Respond to this prompt with a list of potential SEO optimized spotify playlist names that relate to the announcements."
+              },
               {
               "role": "user",
               "content": prompt
               }
             ] 
         )
-    print(response.choices[0].message.content)
     return response.choices[0].message.content
