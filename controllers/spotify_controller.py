@@ -1,3 +1,4 @@
+import json
 import requests
 from requests.auth import HTTPBasicAuth
 import os
@@ -9,6 +10,7 @@ class SpotifyAPI:
         self.client_id = os.environ.get('SPOTIFY_CLIENT_ID', '')
         self.client_secret = os.environ.get('SPOTIFY_CLIENT_SECRET', '')
         self.refresh_token = os.environ.get('SPOTIFY_REFRESH_TOKEN', '')
+        self.user_id = os.environ.get('SPOTIFY_USER_ID')
         self.refresh_access_token()
 
     def refresh_access_token(self):
@@ -89,3 +91,23 @@ class SpotifyAPI:
         }
         response = requests.get(url, headers=headers, params=params)
         return response.json()
+    
+    def create_playlist(self, playlist_name, playlist_description):
+        print("creating playlist")
+        
+        url = f"https://api.spotify.com/v1/users/{self.user_id}/playlists"
+        # Headers and payload for the POST request
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "name": playlist_name,
+            "description": playlist_description,
+            "public": True  # Set to True if you want the playlist to be public
+        }
+
+        # Make the POST request to create the new playlist
+        response = requests.post(url=url, headers=headers, data=json.dumps(payload))
+
+        print(response)

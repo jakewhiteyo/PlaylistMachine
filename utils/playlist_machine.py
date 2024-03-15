@@ -25,6 +25,12 @@ class PlaylistMachine:
     # 3. ask chat GPT for SEO playlist names for each relevant title/description
     playlist_names = self.QueryForPlaylistNames(prompt)
     print(playlist_names)
+
+    # 4. Get songs for each playlist
+
+    # 5. Create Spotify Playlist
+
+    # 6. Add songs to Spotify Playlist
     
     
 

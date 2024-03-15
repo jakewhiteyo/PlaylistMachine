@@ -14,24 +14,22 @@ playlist_machine = PlaylistMachine()
 class ScrapeEDM(Resource):
     def get(self):
         playlist_machine.MikeDean()
- 
+
+
 @api_namespace.route("/internal/refresh-token") 
 class RefreshToken(Resource): 
   def post(self): 
     return spotify_api.refresh_access_token() 
    
-@api_namespace.route("/get-artists") 
-@api_namespace.param('query', 'The search query for the artist', _in='query')
-class GetArtists(Resource):
-    def get(self):
-        search_query = request.args.get('query')
-        
-        # Ensure that a search query was provided
-        if not search_query:
-            return {"error": "No search query provided"}, 400
-        
-        # Call Spotify API client method to search for artists
-        return spotify_api.get_artists(search_query)
+@api_namespace.route("/create-playlist") 
+@api_namespace.param('playlist_name', 'The playlist name', _in='query')
+@api_namespace.param('description', 'The playlist description', _in='query')
+class CreatePlaylist(Resource): 
+  def post(self): 
+    name = request.args.get('playlist_name')
+    description = request.args.get('description')
+    return spotify_api.create_playlist(name, description) 
+
 
 @api_namespace.route("/get-playlists")
 @api_namespace.param('query', 'The search query for the playlist', _in='query')
