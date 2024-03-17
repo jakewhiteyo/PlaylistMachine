@@ -110,4 +110,23 @@ class SpotifyAPI:
         # Make the POST request to create the new playlist
         response = requests.post(url=url, headers=headers, data=json.dumps(payload))
 
-        print(response)
+        return response.json()
+
+
+    def add_playlist_tracks(self, playlist_id, uris):
+        url = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks"
+        # Headers and payload for the POST request
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json"
+        }
+
+        data = json.dumps({
+            "uris": uris
+        })
+
+
+        # Make the POST request to add songs to the playlist
+        response = requests.post(url, headers=headers, data=data)
+
+        return response.json()

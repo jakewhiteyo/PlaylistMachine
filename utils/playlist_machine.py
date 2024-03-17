@@ -12,40 +12,40 @@ class PlaylistMachine:
 
   def MikeDean(self):   
     # 1. query reddit for edm announcements 
-    #edm_posts = self.GetMusicPosts('edm', ['upcoming'])
-    #electronic_posts = self.GetMusicPosts('electronicmusic', ['news'])
-    #posts = edm_posts + electronic_posts
-    
-    #print("\n___ POSTS ___")
-    #json_str = json.dumps(posts, indent=4)
-    #print(json_str)
-    #print("\n")
-#
-    #if(len(posts) < 1): 
-    #  print("no posts")
-    #  return
+    edm_posts = self.GetMusicPosts('edm', ['upcoming'])
+    electronic_posts = self.GetMusicPosts('electronicmusic', ['news'])
+    posts = edm_posts + electronic_posts
+  
+    print("\n___ POSTS ___")
+    json_str = json.dumps(posts, indent=4)
+    print(json_str)
+    print("\n")
+
+    if(len(posts) < 1): 
+      print("no posts")
+      return
     
     
     # 2. generate prompt
-    #prompt = self.CreatePlaylistPrompt(posts)
-    #print("\n___ PROMPT ___")
-    #print(prompt)
-    #print("\n")
+    prompt = self.CreatePlaylistPrompt(posts)
+    print("\n___ PROMPT ___")
+    print(prompt)
+    print("\n")
     
     # 3. ask chat GPT for SEO playlist names for each relevant title/description
       # { 'playlist_name': '2005 by Childish Gambino', 'reddit_post_title': 'New album 2005 by Childish Gambino dropping soon','artists': ['Childish Gambino']}
-    #playlist_names = self.QueryForPlaylistNames(prompt)
-    #print("\n___ Playlist Names ___")
-    #print(playlist_names)
-    #print("\n")
+    playlist_names = self.QueryForPlaylistNames(prompt)
+    print("\n___ Playlist Names ___")
+    print(playlist_names)
+    print("\n")
 
-    playlist_names = [
-      {
-        'playlist_name': 'Stayinit - Fred Again, Overmono, Lil Yachty',
-         'reddit_post_title': 'New song by Fred Again, Overmono, and Lil Yachty - Stayinit',
-         'artists': ['Fred Again', 'Overmono', 'Lil Yachty']
-      }
-    ]
+    #playlist_names = [
+    #  {
+    #    'playlist_name': 'Stayinit - Fred Again, Overmono, Lil Yachty',
+    #     'reddit_post_title': 'New song by Fred Again, Overmono, and Lil Yachty - Stayinit',
+    #     'artists': ['Fred Again', 'Overmono', 'Lil Yachty']
+    #  }
+    #]
 
     # 4. Get songs for each playlist / Create Spotify Playlist
     playlists = []
@@ -60,13 +60,21 @@ class PlaylistMachine:
         'songs': reference_songs
       })
     
+    print("\n_____Playlists_____")
     print(json.dumps(playlists, indent=4))
 
-    # 5. Create Spotify Playlists
+    # 5. Create Spotify Playlists and add songs
     for playlist in playlists:
-      pass
+      playlist_name = playlist.get('name')
+      playlist_songs = playlist.get('songs')
+      # Create Spotify Playlist
+      create_playlist_response = self.spotify_api.create_playlist(playlist_name, "test description")
+      new_playlist_id = create_playlist_response.get('id')
 
-    # 6. Add songs to Spotify Playlist
+      # Add songs to playlist
+      playlist_songs = [song['uri'] for song in playlist_songs]
+      self.spotify_api.add_playlist_tracks(new_playlist_id, playlist_songs)
+
     
   
   def GetPlaylistSongs(self, playlist_name):
@@ -81,7 +89,7 @@ class PlaylistMachine:
         songs.append({
           'name': song.get('track').get('name'),
           'artist': song.get('track').get('artists')[0].get('name'),
-          'id': song.get('track').get('id')
+          'uri': song.get('track').get('uri')
         })
     return songs
 
