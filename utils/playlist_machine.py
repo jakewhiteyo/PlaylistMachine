@@ -12,39 +12,78 @@ class PlaylistMachine:
 
   def MikeDean(self):   
     # 1. query reddit for edm announcements 
-    edm_posts = self.GetMusicPosts('edm', ['upcoming'])
-    electronic_posts = self.GetMusicPosts('electronicmusic', ['news'])
-    posts = edm_posts + electronic_posts
+    #edm_posts = self.GetMusicPosts('edm', ['upcoming'])
+    #electronic_posts = self.GetMusicPosts('electronicmusic', ['news'])
+    #posts = edm_posts + electronic_posts
     
-    print("\n___ POSTS ___")
-    json_str = json.dumps(posts, indent=4)
-    print(json_str)
-    print("\n")
-
-    if(len(posts) < 1): 
-      print("no posts")
-      return
+    #print("\n___ POSTS ___")
+    #json_str = json.dumps(posts, indent=4)
+    #print(json_str)
+    #print("\n")
+#
+    #if(len(posts) < 1): 
+    #  print("no posts")
+    #  return
     
     
     # 2. generate prompt
-    prompt = self.CreatePlaylistPrompt(posts)
-    print("\n___ PROMPT ___")
-    print(prompt)
-    print("\n")
+    #prompt = self.CreatePlaylistPrompt(posts)
+    #print("\n___ PROMPT ___")
+    #print(prompt)
+    #print("\n")
     
     # 3. ask chat GPT for SEO playlist names for each relevant title/description
-    playlist_names = self.QueryForPlaylistNames(prompt)
-    print("\n___ Playlist Names ___")
-    print(playlist_names)
-    print("\n")
+      # { 'playlist_name': '2005 by Childish Gambino', 'reddit_post_title': 'New album 2005 by Childish Gambino dropping soon','artists': ['Childish Gambino']}
+    #playlist_names = self.QueryForPlaylistNames(prompt)
+    #print("\n___ Playlist Names ___")
+    #print(playlist_names)
+    #print("\n")
 
-    # 4. Get songs for each playlist
+    playlist_names = [
+      {
+        'playlist_name': 'Stayinit - Fred Again, Overmono, Lil Yachty',
+         'reddit_post_title': 'New song by Fred Again, Overmono, and Lil Yachty - Stayinit',
+         'artists': ['Fred Again', 'Overmono', 'Lil Yachty']
+      }
+    ]
 
-    # 5. Create Spotify Playlist
+    # 4. Get songs for each playlist / Create Spotify Playlist
+    playlists = []
+    for playlist_data in playlist_names:
+      playlist_name = playlist_data.get('playlist_name')
+      if(playlist_name is None): continue
+      
+      reference_songs = self.GetPlaylistSongs(playlist_name)
+
+      playlists.append({
+        'name': playlist_name,
+        'songs': reference_songs
+      })
+    
+    print(json.dumps(playlists, indent=4))
+
+    # 5. Create Spotify Playlists
+    for playlist in playlists:
+      pass
 
     # 6. Add songs to Spotify Playlist
     
-    
+  
+  def GetPlaylistSongs(self, playlist_name):
+    songs = []
+    # find 3 spotify playlists with a similar name
+    spotify_playlists = self.spotify_api.get_playlists(playlist_name).get('playlists').get('items')
+    # get first 10 songs in each playlist
+    for playlist in spotify_playlists:
+      playlist_id = playlist.get('id')
+      playlist_songs = self.spotify_api.get_playlist_tracks(playlist_id, 10).get('items')
+      for song in playlist_songs:
+        songs.append({
+          'name': song.get('track').get('name'),
+          'artist': song.get('track').get('artists')[0].get('name'),
+          'id': song.get('track').get('id')
+        })
+    return songs
 
   def GetMusicPosts(self, subreddit, flairs):
     posts = self.reddit_api.fetch_posts(subreddit)
@@ -66,7 +105,7 @@ class PlaylistMachine:
   
 
   def CreatePlaylistPrompt(self, posts):
-    prompt = "Here are some Reddit posts. For each of the posts that could be translated into a SEO optimized spotify playlist - because it describes an upcoming song, album, or concert - create a playlist title and add it to a list of JSON objects in this format: \n{ 'playlist_name': '2005 by Childish Gambino', 'reddit_post_title': 'New album 2005 by Childish Gambino dropping soon','artists': ['Childish Gambino']}\n Respond with the JSON object and nothing else. Here are the reddit posts:\n"
+    prompt = "Here are some Reddit posts. For each of the posts that could be translated into a SEO optimized spotify playlist - because it describes an upcoming song, album, or concert - create a playlist title and add it to a list of JSON objects in this format: \n{ 'playlist_name': '2005 - Childish Gambino', 'reddit_post_title': 'New album 2005 by Childish Gambino dropping soon','artists': ['Childish Gambino']}\n Respond with the JSON object and nothing else. Here are the reddit posts:\n"
     json_str = json.dumps(posts, indent = 3)
     prompt += json_str
 

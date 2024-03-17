@@ -46,7 +46,7 @@ class SpotifyAPI:
         return response.json()
 
     # search for spotify playlists related to query
-    def get_playlists(self, query, limit=10):
+    def get_playlists(self, query, limit=3):
         if not self.access_token:
             return {'error': 'Access token undefined'}
 

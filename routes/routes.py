@@ -1,3 +1,4 @@
+import json
 from flask_restx import Namespace, Resource
 from controllers.spotify_controller import SpotifyAPI
 from controllers.reddit_controller import RedditAPI
@@ -42,7 +43,13 @@ class GetPlaylists(Resource):
             return {"error": "No search query provided"}, 400
         
         # Call Spotify API client method to search for artists
-        return spotify_api.get_playlists(search_query)
+        playlists = spotify_api.get_playlists(search_query).get('playlists')
+
+        json_str = json.dumps(playlists, indent=4)
+        print(json_str)
+        return playlists
+
+
 
 
 @api_namespace.route("/get-song")
