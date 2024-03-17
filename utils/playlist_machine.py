@@ -12,19 +12,31 @@ class PlaylistMachine:
 
   def MikeDean(self):   
     # 1. query reddit for edm announcements 
-    posts = self.GetMusicPosts()
-    if(len(posts) < 1): return
+    edm_posts = self.GetMusicPosts('edm', ['upcoming'])
+    electronic_posts = self.GetMusicPosts('electronicmusic', ['news'])
+    posts = edm_posts + electronic_posts
     
+    print("\n___ POSTS ___")
     json_str = json.dumps(posts, indent=4)
     print(json_str)
+    print("\n")
+
+    if(len(posts) < 1): 
+      print("no posts")
+      return
+    
     
     # 2. generate prompt
     prompt = self.CreatePlaylistPrompt(posts)
+    print("\n___ PROMPT ___")
     print(prompt)
+    print("\n")
     
     # 3. ask chat GPT for SEO playlist names for each relevant title/description
     playlist_names = self.QueryForPlaylistNames(prompt)
+    print("\n___ Playlist Names ___")
     print(playlist_names)
+    print("\n")
 
     # 4. Get songs for each playlist
 
@@ -34,15 +46,13 @@ class PlaylistMachine:
     
     
 
-  def GetMusicPosts(self):
-    subreddit = 'edm'
-    flairs = ['upcoming'] # can add 'music' flair if we're feeling crazy
+  def GetMusicPosts(self, subreddit, flairs):
     posts = self.reddit_api.fetch_posts(subreddit)
     announcements = []
     for post in posts:
       post_data = post['data']
-      flair = post_data.get('link_flair_text', 'No Flair')
-      if(flair.lower() in flairs):
+      flair = post_data.get('link_flair_text')
+      if(flair != None and flair.lower() in flairs):
         title = post_data.get('title', 'No Title')
         description = post_data.get('selftext', 'No Description')
         upvotes = post['data']['ups']
@@ -56,13 +66,13 @@ class PlaylistMachine:
   
 
   def CreatePlaylistPrompt(self, posts):
-    prompt = f"Here are {len(posts)} Reddit post titles. For each of the posts that could be translated into a playlist, return with an SEO optimized playlist name. Here are the post titles: "
-    titles = [post["title"] for post in posts]
-    prompt += "\n-"
-    prompt += "\n- ".join(titles)
+    prompt = "Here are some Reddit posts. For each of the posts that could be translated into a SEO optimized spotify playlist - because it describes an upcoming song, album, or concert - create a playlist title and add it to a list of JSON objects in this format: \n{ 'playlist_name': '2005 by Childish Gambino', 'reddit_post_title': 'New album 2005 by Childish Gambino dropping soon','artists': ['Childish Gambino']}\n Respond with the JSON object and nothing else. Here are the reddit posts:\n"
+    json_str = json.dumps(posts, indent = 3)
+    prompt += json_str
+
     return prompt
 
   def QueryForPlaylistNames(self, prompt):
-    response = self.openai_api.query_chat(prompt)
-    playlist_names = cleanse_string(response)
-    return playlist_names
+    names = self.openai_api.query_chat(prompt)
+    print(names)
+    return json.loads(names)
