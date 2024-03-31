@@ -48,6 +48,38 @@ class GetPlaylists(Resource):
         json_str = json.dumps(playlists, indent=4)
         print(json_str)
         return playlists
+    
+@api_namespace.route("/get-artist-id")
+@api_namespace.param('artist_name', 'The name of the artist', _in='query')
+class GetArtistId(Resource):
+    def get(self):
+        artist_name = request.args.get('artist_name')
+        
+        # Ensure that a search query was provided
+        if not artist_name:
+            return {"error": "No artist_name provided"}, 400
+        
+        # Call Spotify API client method to search for artists
+        response = spotify_api.get_artist_id(artist_name)
+
+        return response
+    
+@api_namespace.route("/get-artist-tracks")
+@api_namespace.param('artist_id', 'The id of the artist', _in='query')
+class GetArtistId(Resource):
+    def get(self):
+        artist_id = request.args.get('artist_id')
+        
+        # Ensure that a search query was provided
+        if not artist_id:
+            return {"error": "No artist_id provided"}, 400
+        
+        # Call Spotify API client method to search for artists
+        response = spotify_api.get_artist_songs(artist_id)
+
+        print
+
+        return response
 
 
 

@@ -11,21 +11,19 @@ class PlaylistMachine:
     self.openai_api = OpenAiAPI()
 
   def MikeDean(self):   
-    # 1. query reddit for edm announcements 
+    # 1. query reddit for music announcements 
     edm_posts = self.GetMusicPosts('edm', ['upcoming'])
     electronic_posts = self.GetMusicWithTags('electronicmusic', ['NEW', 'FRESH'])
     hiphop_posts = self.GetMusicWithTags('hiphopheads', ['FRESH'])
     posts = edm_posts + electronic_posts + hiphop_posts
   
     print("\n___ POSTS ___")
-    json_str = json.dumps(posts, indent=4)
-    print(json_str)
+    print(json.dumps(posts, indent=4))
     print("\n")
 
     if(len(posts) < 1): 
       print("no posts")
       return
-    
     
     # 2. generate prompt
     prompt = self.CreatePlaylistPrompt(posts)
@@ -36,33 +34,36 @@ class PlaylistMachine:
     # 3. ask chat GPT for SEO playlist names for each relevant title/description
       # { 'playlist_name': '2005 by Childish Gambino', 'reddit_post_title': 'New album 2005 by Childish Gambino dropping soon','artists': ['Childish Gambino']}
     playlist_names = self.QueryForPlaylistNames(prompt)
-    json_str = json.dumps(playlist_names, indent=4)
     print("\n___ Playlist Names ___")
-    print(json_str)
+    print(json.dumps(playlist_names, indent=4))
     print("\n")
 
     if(len(playlist_names) < 1):
       print("no playlists")
       return
-
-    #playlist_names = [
-    #  {
-    #    'playlist_name': 'Stayinit - Fred Again, Overmono, Lil Yachty',
-    #     'reddit_post_title': 'New song by Fred Again, Overmono, and Lil Yachty - Stayinit',
-    #     'artists': ['Fred Again', 'Overmono', 'Lil Yachty']
-    #  }
-    #]
+    
 
     # 4. Get songs for each playlist / Create Spotify Playlist
     playlists = []
     for playlist_data in playlist_names:
       playlist_name = playlist_data.get('playlist_name')
-      if(playlist_name is None): continue
+      playlist_description = playlist_data.get('playlist_description')
+
+      if(playlist_name is None or playlist_description is None): continue
       
+      # get related songs to add to playlists
       reference_songs = self.GetPlaylistSongs(playlist_name)
+
+      # get music made by me >:)
+      white_house_id = "6Ns5G9yS8sEMfFpw4nNv6R"
+      my_songs = self.spotify_api.get_artist_songs(white_house_id);
+
+      if(len(reference_songs) < 1):
+        continue;
 
       playlists.append({
         'name': playlist_name,
+        'description': playlist_description,
         'songs': reference_songs
       })
     
@@ -72,9 +73,11 @@ class PlaylistMachine:
     # 5. Create Spotify Playlists and add songs
     for playlist in playlists:
       playlist_name = playlist.get('name')
+      playlist_description = playlist.get('description')
       playlist_songs = playlist.get('songs')
+
       # Create Spotify Playlist
-      create_playlist_response = self.spotify_api.create_playlist(playlist_name, "test description")
+      create_playlist_response = self.spotify_api.create_playlist(playlist_name, playlist_description)
       new_playlist_id = create_playlist_response.get('id')
 
       # Add songs to playlist
@@ -92,11 +95,14 @@ class PlaylistMachine:
       playlist_id = playlist.get('id')
       playlist_songs = self.spotify_api.get_playlist_tracks(playlist_id, 10).get('items')
       for song in playlist_songs:
-        songs.append({
-          'name': song.get('track').get('name'),
-          'artist': song.get('track').get('artists')[0].get('name'),
-          'uri': song.get('track').get('uri')
-        })
+        try:
+          songs.append({
+            'name': song.get('track').get('name'),
+            'artist': song.get('track').get('artists')[0].get('name'),
+            'uri': song.get('track').get('uri')
+          })
+        except:
+          continue;
     return songs
 
   def GetMusicPosts(self, subreddit, flairs):

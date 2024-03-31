@@ -62,6 +62,33 @@ class SpotifyAPI:
         response = requests.get(url, headers=headers, params=params)
         return response.json()
 
+    # Search for an artist by name and return their Spotify ID.
+    def get_artist_id(self, artist_name):
+        search_url = 'https://api.spotify.com/v1/search'
+        headers = {'Authorization': f'Bearer {self.access_token}'}
+        params = {'q': artist_name, 'type': 'artist', 'limit': 1}
+        response = requests.get(search_url, headers=headers, params=params)
+        results = response.json()
+        return results['artists']['items'][0]['id']
+
+    def get_artist_songs(self, artist_id):
+        albums_url = f'https://api.spotify.com/v1/artists/{artist_id}/albums'
+        headers = {'Authorization': f'Bearer {self.access_token}'}
+        params = {'include_groups': 'album,single', 'limit': 50}
+        response = requests.get(albums_url, headers=headers, params=params)
+        albums = response.json()['items']
+        
+        tracks = []
+        for album in albums:
+            album_id = album['id']
+            tracks_url = f'https://api.spotify.com/v1/albums/{album_id}/tracks'
+            tracks_response = requests.get(tracks_url, headers=headers)
+            tracks_data = tracks_response.json()['items']
+            for track in tracks_data:
+                tracks.append(track['name'])
+        
+        return tracks
+
     # search spotify for song
     def get_song(self, query, limit=1):
         if not self.access_token:
@@ -93,7 +120,7 @@ class SpotifyAPI:
         return response.json()
     
     def create_playlist(self, playlist_name, playlist_description):
-        print("creating playlist")
+        print(f"creating playlist {playlist_name}")
         
         url = f"https://api.spotify.com/v1/users/{self.user_id}/playlists"
         # Headers and payload for the POST request
