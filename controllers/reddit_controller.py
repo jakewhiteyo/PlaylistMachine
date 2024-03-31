@@ -14,7 +14,7 @@ class RedditAPI:
     data = {'grant_type': 'client_credentials'}
     headers = {'User-Agent': self.user_agent}
     response = requests.post('https://www.reddit.com/api/v1/access_token', auth=auth, data=data, headers=headers).json()
-    print("response", response)
+    #print("response", response)
     # token_info = {
     #     'access_token': response['access_token'],
     #     'expires_at': time.time() + response['expires_in']
@@ -22,14 +22,24 @@ class RedditAPI:
     return response['access_token']
 
 
-  def fetch_posts(self, subreddit):
+  def fetch_posts(self, subreddit, tags=None):
     access_token = self.get_access_token()
-    print("fetching posts")
+    print(f'fetching posts from {subreddit}')
     headers = {
         'Authorization': f'bearer {access_token}',
         'User-Agent': self.user_agent
     }
-    response = requests.get(f'https://oauth.reddit.com/r/{subreddit}/new', headers=headers, params={'limit': 100})
+    params = {
+       'restrict_sr': '1',
+        'sort': 'hot',
+        't': 'week',
+        'limit': 10
+    }
+    if tags:
+       params['q'] = tags
+    print(params)
+
+    response = requests.get(f'https://oauth.reddit.com/r/{subreddit}/search', headers=headers, params=params)
     if response.status_code == 200:
         posts = response.json()['data']['children']
         return posts

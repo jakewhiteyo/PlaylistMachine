@@ -13,8 +13,9 @@ class PlaylistMachine:
   def MikeDean(self):   
     # 1. query reddit for edm announcements 
     edm_posts = self.GetMusicPosts('edm', ['upcoming'])
-    electronic_posts = self.GetMusicPosts('electronicmusic', ['news'])
-    posts = edm_posts + electronic_posts
+    electronic_posts = self.GetMusicWithTags('electronicmusic', ['NEW', 'FRESH'])
+    hiphop_posts = self.GetMusicWithTags('hiphopheads', ['FRESH'])
+    posts = edm_posts + electronic_posts + hiphop_posts
   
     print("\n___ POSTS ___")
     json_str = json.dumps(posts, indent=4)
@@ -105,15 +106,40 @@ class PlaylistMachine:
         upvotes = post['data']['ups']
         announcements.append({
           "title":title,
-          "description":description,
+          #"description":description,
           "upvotes":upvotes,
           "flair":flair
         })
     return announcements
   
+  def GetMusicWithTags(self, subreddit, tags):
+    posts = []
+    for tag in tags: 
+      posts += self.reddit_api.fetch_posts(subreddit, tag)
+    
+    announcements = []
+    for post in posts:
+      post_data = post['data']
+      title = post_data.get('title', 'No Title')
+      description = post_data.get('selftext', 'No Description')
+      upvotes = post['data']['ups']
+
+      print(title)
+
+      for tag in tags:
+        if tag.lower() in title.lower():
+          announcements.append({
+            "title":title,
+            #"description":description,
+            "upvotes":upvotes
+          })
+          break
+    return announcements
+  
+  
 
   def CreatePlaylistPrompt(self, posts):
-    prompt = "Here are some Reddit posts. For each of the posts that could be translated into a SEO optimized spotify playlist - because it describes an upcoming song, album, or concert - create a playlist title and add it to a list of JSON objects in this format: \n{ 'playlist_name': '2005 - Childish Gambino', 'reddit_post_title': 'New album 2005 by Childish Gambino dropping soon','artists': ['Childish Gambino']}\n Respond with the JSON object and nothing else. Here are the reddit posts:\n"
+    prompt = "Here are some Reddit posts. For each of the posts that could be translated into a SEO optimized spotify playlist - because it describes an upcoming song, album, or concert - create a playlist title and add it to a list of JSON objects in this format: \n{ 'playlist_name': '2005 - Childish Gambino', 'playlist_description': 'New album 2005 by Childish Gambino', 'reddit_post_title': 'New album 2005 by Childish Gambino dropping soon','artists': ['Childish Gambino']}\n Respond with the JSON object and nothing else. Here are the reddit posts:\n"
     json_str = json.dumps(posts, indent = 3)
     prompt += json_str
 
