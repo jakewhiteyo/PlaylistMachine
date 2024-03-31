@@ -36,9 +36,14 @@ class PlaylistMachine:
     # 3. ask chat GPT for SEO playlist names for each relevant title/description
       # { 'playlist_name': '2005 by Childish Gambino', 'reddit_post_title': 'New album 2005 by Childish Gambino dropping soon','artists': ['Childish Gambino']}
     playlist_names = self.QueryForPlaylistNames(prompt)
+    json_str = json.dumps(playlist_names, indent=4)
     print("\n___ Playlist Names ___")
-    print(playlist_names)
+    print(json_str)
     print("\n")
+
+    if(len(playlist_names) < 1):
+      print("no playlists")
+      return
 
     #playlist_names = [
     #  {
@@ -124,8 +129,6 @@ class PlaylistMachine:
       description = post_data.get('selftext', 'No Description')
       upvotes = post['data']['ups']
 
-      print(title)
-
       for tag in tags:
         if tag.lower() in title.lower():
           announcements.append({
@@ -139,7 +142,7 @@ class PlaylistMachine:
   
 
   def CreatePlaylistPrompt(self, posts):
-    prompt = "Here are some Reddit posts. For each of the posts that could be translated into a SEO optimized spotify playlist - because it describes an upcoming song, album, or concert - create a playlist title and add it to a list of JSON objects in this format: \n{ 'playlist_name': '2005 - Childish Gambino', 'playlist_description': 'New album 2005 by Childish Gambino', 'reddit_post_title': 'New album 2005 by Childish Gambino dropping soon','artists': ['Childish Gambino']}\n Respond with the JSON object and nothing else. Here are the reddit posts:\n"
+    prompt = "Here are some Reddit posts. For each of the posts that could be translated into a SEO optimized spotify playlist - because it describes an upcoming song, album, or concert - create a playlist title and add it to a list of JSON objects in this format: \n{ \"playlist_name\": \"2005 - Childish Gambino\", \"playlist_description\": \"New album 2005 by Childish Gambino\", \"reddit_post_title\": \"New album 2005 by Childish Gambino dropping soon\",\"artists\": [\"Childish Gambino\"]}\n Respond with the JSON object and nothing else. Here are the reddit posts:\n"
     json_str = json.dumps(posts, indent = 3)
     prompt += json_str
 
@@ -147,5 +150,18 @@ class PlaylistMachine:
 
   def QueryForPlaylistNames(self, prompt):
     names = self.openai_api.query_chat(prompt)
-    print(names)
-    return json.loads(names)
+    try:  
+      json_names = json.loads(names)
+      return json_names
+    except:
+      print("Issue parsing JSON object")
+      error_prompt = "There is something wrong with this JSON object that is making it fail to parse correctly:"
+      error_prompt += names
+      error_prompt += " fix this JSON object and return with the correctly formatted object. Only respond with the corrected object"
+      retry_names = self.openai_api.query_chat(error_prompt)
+      try:
+        json_names = json.loads(retry_names)
+        return json_names
+      except:
+        print("Failed to parse again, too bad")
+        return []
